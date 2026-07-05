@@ -1,0 +1,3317 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="عداد سرعة GPS احترافي فائق السرعة للسيارات والطائرات">
+    <title>GPS Speedometer Pro - عداد السرعة الاحترافي</title>
+
+    <!-- ============================================================ -->
+    <!-- ==================== CSS STYLES SECTION ==================== -->
+    <!-- ============================================================ -->
+    <style>
+        /* ========================================================
+           استيراد الخط الرقمي الاحترافي
+           ======================================================== */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Cairo:wght@300;400;600;700&display=swap');
+
+        /* ========================================================
+           متغيرات CSS العامة (CSS Custom Properties / Variables)
+           تُستخدم لإدارة الألوان والحجم بشكل مركزي
+           ======================================================== */
+        :root {
+            /* الألوان الأساسية - الوضع الليلي */
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a2e;
+            --bg-card: rgba(20, 20, 35, 0.85);
+            --bg-glass: rgba(30, 30, 50, 0.6);
+
+            /* ألوان النصوص */
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0c0;
+            --text-muted: #606070;
+
+            /* ألوان مميزة (Accent Colors) */
+            --accent-cyan: #00f0ff;
+            --accent-green: #00ff88;
+            --accent-yellow: #ffcc00;
+            --accent-orange: #ff8800;
+            --accent-red: #ff3344;
+            --accent-blue: #0088ff;
+            --accent-purple: #aa00ff;
+
+            /* ألوان حسب السرعة */
+            --speed-low: #00ff88;
+            --speed-mid: #ffcc00;
+            --speed-high: #ff8800;
+            --speed-max: #ff3344;
+
+            /* أحجام */
+            --speed-font-size: clamp(6rem, 28vw, 12rem);
+            --border-radius: 16px;
+            --border-radius-sm: 10px;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.3s ease;
+            --transition-slow: 0.6s ease;
+
+            /* الظلال (Shadows) */
+            --shadow-glow-cyan: 0 0 20px rgba(0, 240, 255, 0.4), 0 0 40px rgba(0, 240, 255, 0.2);
+            --shadow-glow-green: 0 0 30px rgba(0, 255, 136, 0.5), 0 0 60px rgba(0, 255, 136, 0.2);
+            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        /* ========================================================
+           إعادة تعيين أساسية (CSS Reset)
+           ======================================================== */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* ========================================================
+           أنماط HTML و Body الأساسية
+           ======================================================== */
+        html {
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: 'Cairo', 'Share Tech Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow: hidden;
+            position: relative;
+            overscroll-behavior: none;
+            touch-action: manipulation;
+        }
+
+        /* ========================================================
+           خلفية متحركة (Animated Background)
+           تُضيف تأثيراً بصرياً جذاباً بدون التأثير على الأداء
+           ======================================================== */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bg-animated::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(
+                ellipse at center,
+                rgba(0, 136, 255, 0.08) 0%,
+                rgba(0, 0, 0, 0) 50%
+            );
+            animation: bgPulse 8s ease-in-out infinite;
+        }
+
+        .bg-animated::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                linear-gradient(180deg, rgba(0, 240, 255, 0.03) 0%, transparent 30%),
+                linear-gradient(0deg, rgba(170, 0, 255, 0.03) 0%, transparent 30%);
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
+            50% { transform: scale(1.1) rotate(180deg); opacity: 0.8; }
+        }
+
+        /* ========================================================
+           الحاوية الرئيسية (Main Container)
+           ======================================================== */
+        #app-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        /* ========================================================
+           شريط الحالة العلوي (Top Status Bar)
+           ======================================================== */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            flex-shrink: 0;
+            gap: 10px;
+        }
+
+        .status-bar-left,
+        .status-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* مؤشر حالة GPS */
+        .gps-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: var(--bg-glass);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all var(--transition-normal);
+        }
+
+        .gps-status-indicator.active {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .gps-status-indicator.error {
+            border-color: var(--accent-red);
+            background: rgba(255, 51, 68, 0.1);
+        }
+
+        .gps-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            transition: all var(--transition-normal);
+        }
+
+        .gps-status-indicator.active .gps-status-dot {
+            background: var(--accent-green);
+            animation: pulseDot 1s ease-in-out infinite;
+        }
+
+        .gps-status-indicator.error .gps-status-dot {
+            background: var(--accent-red);
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        /* مؤشر WakeLock */
+        .wakelock-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--bg-glass);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            transition: all var(--transition-normal);
+        }
+
+        .wakelock-indicator.active {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        .wakelock-icon {
+            font-size: 0.9rem;
+            line-height: 1;
+        }
+
+        /* مؤشر عدد الأقمار الصناعية */
+        .satellite-count {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--bg-glass);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .satellite-icon {
+            font-size: 0.9rem;
+        }
+
+        /* ========================================================
+           منطقة العرض الرئيسية (Main Display Area)
+           ======================================================== */
+        .main-display {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 10px 20px;
+            overflow: hidden;
+        }
+
+        /* ========================================================
+           عداد السرعة الدائري (Circular Speed Gauge)
+           ======================================================== */
+        .gauge-container {
+            position: relative;
+            width: min(90vw, 420px);
+            height: min(90vw, 420px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* الـ SVG الخاص بالعداد الدائري */
+        .gauge-svg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform: rotate(135deg);
+            filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.2));
+        }
+
+        /* مسار الخلفية للعداد */
+        .gauge-track {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.06);
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+
+        /* مسار التقدم للعداد (يتغير حسب السرعة) */
+        .gauge-progress {
+            fill: none;
+            stroke: var(--accent-cyan);
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.1s linear, stroke 0.3s ease;
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        /* علامات السرعة على القوس */
+        .gauge-tick {
+            stroke: rgba(255, 255, 255, 0.3);
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+
+        .gauge-tick.major {
+            stroke: rgba(255, 255, 255, 0.5);
+            stroke-width: 3;
+        }
+
+        .gauge-tick-label {
+            fill: rgba(255, 255, 255, 0.4);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        /* ========================================================
+           عرض السرعة الرقمية (Digital Speed Display)
+           ======================================================== */
+        .speed-display-wrapper {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .speed-value {
+            font-family: 'Orbitron', monospace;
+            font-size: var(--speed-font-size);
+            font-weight: 900;
+            line-height: 1;
+            color: var(--accent-cyan);
+            text-shadow:
+                0 0 10px rgba(0, 240, 255, 0.6),
+                0 0 20px rgba(0, 240, 255, 0.4),
+                0 0 40px rgba(0, 240, 255, 0.2);
+            letter-spacing: -0.03em;
+            transition: color var(--transition-normal), text-shadow var(--transition-normal);
+            font-variant-numeric: tabular-nums;
+            will-change: contents;
+        }
+
+        /* تغيير لون السرعة حسب المدى */
+        .speed-value.low {
+            color: var(--speed-low);
+            text-shadow:
+                0 0 10px rgba(0, 255, 136, 0.6),
+                0 0 20px rgba(0, 255, 136, 0.4),
+                0 0 40px rgba(0, 255, 136, 0.2);
+        }
+
+        .speed-value.mid {
+            color: var(--speed-mid);
+            text-shadow:
+                0 0 10px rgba(255, 204, 0, 0.6),
+                0 0 20px rgba(255, 204, 0, 0.4),
+                0 0 40px rgba(255, 204, 0, 0.2);
+        }
+
+        .speed-value.high {
+            color: var(--speed-high);
+            text-shadow:
+                0 0 10px rgba(255, 136, 0, 0.7),
+                0 0 20px rgba(255, 136, 0, 0.5),
+                0 0 40px rgba(255, 136, 0, 0.3);
+        }
+
+        .speed-value.max {
+            color: var(--speed-max);
+            text-shadow:
+                0 0 10px rgba(255, 51, 68, 0.8),
+                0 0 20px rgba(255, 51, 68, 0.6),
+                0 0 40px rgba(255, 51, 68, 0.4);
+            animation: speedPulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes speedPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .speed-unit {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1rem, 5vw, 1.8rem);
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.1em;
+            margin-top: -8px;
+            text-transform: uppercase;
+        }
+
+        /* ========================================================
+           بطاقات البيانات الإضافية (Data Cards)
+           ======================================================== */
+        .data-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+            margin-top: 20px;
+            padding: 0 10px;
+        }
+
+        .data-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--border-radius-sm);
+            padding: 14px 8px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--card-accent, var(--accent-cyan));
+            opacity: 0.6;
+        }
+
+        .data-card.altitude { --card-accent: var(--accent-blue); }
+        .data-card.heading { --card-accent: var(--accent-purple); }
+        .data-card.accuracy { --card-accent: var(--accent-green); }
+
+        .data-card-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .data-card-icon {
+            font-size: 1rem;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .data-card-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+
+        .data-card-unit {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        /* ========================================================
+           شريط معلومات إضافي (Info Strip)
+           ======================================================== */
+        .info-strip {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 500px;
+            padding: 0 20px;
+            margin-top: 12px;
+            gap: 10px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .info-item-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .info-item-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ========================================================
+           زر البدء/الإيقاف (Start/Stop Button)
+           ======================================================== */
+        .controls {
+            flex-shrink: 0;
+            padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .btn-start-stop {
+            flex: 1;
+            max-width: 280px;
+            padding: 18px 32px;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--accent-green) 0%, #00cc66 100%);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                0 4px 20px rgba(0, 255, 136, 0.4),
+                0 0 40px rgba(0, 255, 136, 0.2);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .btn-start-stop::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.4s ease, height 0.4s ease;
+        }
+
+        .btn-start-stop:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-start-stop:active {
+            transform: scale(0.97);
+        }
+
+        .btn-start-stop.running {
+            background: linear-gradient(135deg, var(--accent-red) 0%, #cc2233 100%);
+            box-shadow:
+                0 4px 20px rgba(255, 51, 68, 0.4),
+                0 0 40px rgba(255, 51, 68, 0.2);
+        }
+
+        /* زر الإعدادات */
+        .btn-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: var(--bg-glass);
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+            flex-shrink: 0;
+        }
+
+        .btn-icon:active {
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ========================================================
+           شاشة التحميل (Loading Screen / Splash)
+           ======================================================== */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        .splash-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .splash-logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+            margin-bottom: 20px;
+            animation: splashGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes splashGlow {
+            0%, 100% { text-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
+            50% { text-shadow: 0 0 40px rgba(0, 240, 255, 0.8), 0 0 60px rgba(0, 240, 255, 0.4); }
+        }
+
+        .splash-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        .splash-loader {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 240, 255, 0.2);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ========================================================
+           نافذة منبثقة للإعدادات (Settings Modal)
+           ======================================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 28px 24px;
+            width: 100%;
+            max-width: 380px;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--accent-cyan);
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .setting-value {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--accent-cyan);
+            font-size: 0.85rem;
+        }
+
+        /* مفتاح التبديل (Toggle Switch) */
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+
+        .toggle-switch.active {
+            background: var(--accent-green);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform var(--transition-fast);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(22px);
+        }
+
+        /* شريط التمرير (Range Slider) */
+        .range-slider {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            appearance: none;
+            -webkit-appearance: none;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        /* أزرار الوحدات */
+        .unit-selector {
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 4px;
+        }
+
+        .unit-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .unit-btn.active {
+            background: var(--accent-cyan);
+            color: #000;
+            font-weight: 700;
+        }
+
+        .modal-close-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: var(--accent-cyan);
+            color: #000;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all var(--transition-fast);
+        }
+
+        .modal-close-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* ========================================================
+           رسالة تنبيه (Toast Notification)
+           ======================================================== */
+        .toast-container {
+            position: fixed;
+            top: env(safe-area-inset-top, 0px);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: var(--shadow-card);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(-100px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            pointer-events: auto;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { border-left: 3px solid var(--accent-green); }
+        .toast.error { border-left: 3px solid var(--accent-red); }
+        .toast.warning { border-left: 3px solid var(--accent-yellow); }
+        .toast.info { border-left: 3px solid var(--accent-cyan); }
+
+        /* ========================================================
+           مؤشر الاتجاه (Compass / Heading Indicator)
+           ======================================================== */
+        .compass-mini {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            margin-right: 4px;
+        }
+
+        .compass-arrow {
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 12px solid var(--accent-purple);
+            transform-origin: center;
+            transition: transform 0.2s ease;
+            filter: drop-shadow(0 0 4px rgba(170, 0, 255, 0.6));
+        }
+
+        /* ========================================================
+           رسوم بيانية مصغّرة (Mini Graph)
+           ======================================================== */
+        .speed-graph {
+            width: 100%;
+            max-width: 500px;
+            height: 40px;
+            margin-top: 12px;
+            padding: 0 20px;
+        }
+
+        .speed-graph canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+        }
+
+        /* ========================================================
+           أنماط خاصة بالوضع الأفقي (Landscape Mode)
+           ======================================================== */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .gauge-container {
+                width: min(60vh, 280px);
+                height: min(60vh, 280px);
+            }
+
+            :root {
+                --speed-font-size: clamp(4rem, 18vh, 8rem);
+            }
+
+            .data-cards {
+                grid-template-columns: repeat(3, 1fr);
+                max-width: 600px;
+                margin-top: 10px;
+            }
+
+            .info-strip {
+                margin-top: 8px;
+            }
+
+            .controls {
+                padding: 10px 20px;
+            }
+
+            .btn-start-stop {
+                padding: 12px 24px;
+                font-size: 1rem;
+            }
+        }
+
+        /* ========================================================
+           أنماط للأجهزة اللوحية (Tablets)
+           ======================================================== */
+        @media (min-width: 768px) {
+            :root {
+                --speed-font-size: clamp(6rem, 20vw, 10rem);
+            }
+
+            .gauge-container {
+                width: min(70vw, 500px);
+                height: min(70vw, 500px);
+            }
+
+            .data-cards {
+                max-width: 600px;
+            }
+        }
+
+        /* ========================================================
+           أنماط للشاشات الكبيرة (Desktop)
+           ======================================================== */
+        @media (min-width: 1024px) {
+            #app-container {
+                max-width: 600px;
+                margin: 0 auto;
+                border-left: 1px solid rgba(255, 255, 255, 0.05);
+                border-right: 1px solid rgba(255, 255, 255, 0.05);
+            }
+        }
+
+        /* ========================================================
+           فئات مساعدة (Utility Classes)
+           ======================================================== */
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.4s ease forwards; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* منع التمرير العمودي على iOS */
+        body {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        /* تحسين عرض الأرقام */
+        .tabular { font-variant-numeric: tabular-nums; }
+
+        /* ========================================================
+           مؤشر جودة الإشارة (Signal Quality Bar)
+           ======================================================== */
+        .signal-quality-bar {
+            width: 100%;
+            max-width: 500px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            margin: 8px 20px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .signal-quality-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-red), var(--accent-yellow), var(--accent-green));
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* ========================================================
+           نمط الطيران (Aviation Mode)
+           ======================================================== */
+        body.aviation-mode .speed-value {
+            font-size: clamp(5rem, 24vw, 10rem);
+        }
+
+        body.aviation-mode .gauge-container {
+            width: min(85vw, 380px);
+            height: min(85vw, 380px);
+        }
+
+        /* ========================================================
+           أنماط الطباعة (Print Styles) - للحفاظ على السجلات
+           ======================================================== */
+        @media print {
+            body { background: white; color: black; }
+            .controls, .status-bar, .bg-animated { display: none; }
+        }
+
+        /* ========================================================
+           احترام تفضيل تقليل الحركة (Prefers Reduced Motion)
+           ======================================================== */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================ -->
+    <!-- ==================== HTML STRUCTURE ======================== -->
+    <!-- ============================================================ -->
+
+    <!-- خلفية متحركة -->
+    <div class="bg-animated" aria-hidden="true"></div>
+
+    <!-- شاشة التحميل (Splash Screen) -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-logo">GPS SPEEDOMETER</div>
+        <div class="splash-subtitle">جاري التحميل...</div>
+        <div class="splash-loader"></div>
+    </div>
+
+    <!-- حاوية التطبيق الرئيسية -->
+    <div id="app-container">
+
+        <!-- ========================================================
+             شريط الحالة العلوي
+             ======================================================== -->
+        <header class="status-bar">
+            <div class="status-bar-left">
+                <!-- مؤشر حالة GPS -->
+                <div class="gps-status-indicator" id="gpsStatusIndicator">
+                    <span class="gps-status-dot"></span>
+                    <span id="gpsStatusText">GPS: غير متصل</span>
+                </div>
+                <!-- مؤشر عدد الأقمار الصناعية -->
+                <div class="satellite-count" id="satelliteCount">
+                    <span class="satellite-icon">🛰️</span>
+                    <span id="satCountText">--</span>
+                </div>
+            </div>
+            <div class="status-bar-right">
+                <!-- مؤشر WakeLock -->
+                <div class="wakelock-indicator" id="wakeLockIndicator">
+                    <span class="wakelock-icon">💡</span>
+                    <span>الشاشة</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ========================================================
+             منطقة العرض الرئيسية
+             ======================================================== -->
+        <main class="main-display">
+
+            <!-- العداد الدائري + السرعة الرقمية -->
+            <div class="gauge-container">
+
+                <!-- SVG للعداد الدائري -->
+                <!-- ملاحظة: القوس يمتد من 135 درجة إلى 405 درجة (270 درجة إجمالاً) -->
+                <svg class="gauge-svg" viewBox="0 0 200 200" id="gaugeSvg">
+                    <!--
+                        مسار الخلفية: قوس يمتد 270 درجة
+                        المركز: (100, 100)، نصف القطر: 80
+                        نقطة البداية: الزاوية 135 درجة = (100 + 80*cos(135°), 100 + 80*sin(135°)) = (43.43, 156.57)
+                        نقطة النهاية: الزاوية 405 درجة (= 45 درجة) = (100 + 80*cos(45°), 100 + 80*sin(45°)) = (156.57, 43.43)
+                    -->
+                    <path
+                        class="gauge-track"
+                        d="M 43.43 156.57 A 80 80 0 1 1 156.57 43.43"
+                        id="gaugeTrackPath"
+                    />
+
+                    <!-- مسار التقدم (يتم تحديثه ديناميكياً) -->
+                    <path
+                        class="gauge-progress"
+                        d="M 43.43 156.57 A 80 80 0 1 1 156.57 43.43"
+                        id="gaugeProgressPath"
+                        stroke-dasharray="377"
+                        stroke-dashoffset="377"
+                    />
+
+                    <!-- علامات السرعة (Ticks) - سيتم إنشاؤها ديناميكياً -->
+                    <g id="gaugeTicks"></g>
+                </svg>
+
+                <!-- عرض السرعة الرقمية -->
+                <div class="speed-display-wrapper">
+                    <div class="speed-value" id="speedValue">0</div>
+                    <div class="speed-unit" id="speedUnit">km/h</div>
+                </div>
+            </div>
+
+            <!-- بطاقات البيانات الإضافية -->
+            <div class="data-cards">
+                <!-- بطاقة الارتفاع (Altitude) -->
+                <div class="data-card altitude">
+                    <span class="data-card-icon">⛰️</span>
+                    <div class="data-card-label">الارتفاع</div>
+                    <div class="data-card-value" id="altitudeValue">---</div>
+                    <div class="data-card-unit">متر</div>
+                </div>
+
+                <!-- بطاقة الاتجاه (Heading/Compass) -->
+                <div class="data-card heading">
+                    <span class="data-card-icon">
+                        <span class="compass-mini">
+                            <span class="compass-arrow" id="compassArrow"></span>
+                        </span>
+                    </span>
+                    <div class="data-card-label">الاتجاه</div>
+                    <div class="data-card-value" id="headingValue">---</div>
+                    <div class="data-card-unit" id="headingDirection">---</div>
+                </div>
+
+                <!-- بطاقة دقة GPS (Accuracy) -->
+                <div class="data-card accuracy">
+                    <span class="data-card-icon">🎯</span>
+                    <div class="data-card-label">الدقة</div>
+                    <div class="data-card-value" id="accuracyValue">---</div>
+                    <div class="data-card-unit">متر</div>
+                </div>
+            </div>
+
+            <!-- شريط جودة الإشارة -->
+            <div class="signal-quality-bar">
+                <div class="signal-quality-fill" id="signalQualityFill"></div>
+            </div>
+
+            <!-- رسم بياني مصغر للسرعة -->
+            <div class="speed-graph">
+                <canvas id="speedGraphCanvas"></canvas>
+            </div>
+
+            <!-- شريط معلومات إضافية -->
+            <div class="info-strip">
+                <div class="info-item">
+                    <span class="info-item-label">السرعة القصوى</span>
+                    <span class="info-item-value" id="maxSpeedValue">0 km/h</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">السرعة المتوسطة</span>
+                    <span class="info-item-value" id="avgSpeedValue">0 km/h</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">المسافة</span>
+                    <span class="info-item-value" id="distanceValue">0.00 كم</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">المدة</span>
+                    <span class="info-item-value" id="durationValue">00:00</span>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ========================================================
+             أزرار التحكم
+             ======================================================== -->
+        <footer class="controls">
+            <!-- زر الإعدادات -->
+            <button class="btn-icon" id="settingsBtn" aria-label="الإعدادات">
+                ⚙️
+            </button>
+
+            <!-- زر البدء/الإيقاف -->
+            <button class="btn-start-stop" id="startStopBtn">
+                <span id="startStopText">ابدأ</span>
+            </button>
+
+            <!-- زر إعادة التعيين -->
+            <button class="btn-icon" id="resetBtn" aria-label="إعادة تعيين">
+                🔄
+            </button>
+        </footer>
+
+    </div>
+
+    <!-- ========================================================
+         نافذة الإعدادات المنبثقة
+         ======================================================== -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <h2 class="modal-title">⚙️ الإعدادات</h2>
+
+            <!-- اختيار الوحدة -->
+            <div class="setting-group">
+                <div class="setting-label">
+                    <span>وحدة السرعة</span>
+                </div>
+                <div class="unit-selector">
+                    <button class="unit-btn active" data-unit="kmh">km/h</button>
+                    <button class="unit-btn" data-unit="mph">mph</button>
+                    <button class="unit-btn" data-unit="ms">m/s</button>
+                    <button class="unit-btn" data-unit="knots">knots</button>
+                </div>
+            </div>
+
+            <!-- الحد الأقصى للعداد -->
+            <div class="setting-group">
+                <div class="setting-label">
+                    <span>الحد الأقصى للعداد</span>
+                    <span class="setting-value" id="maxSpeedSettingValue">220 km/h</span>
+                </div>
+                <input type="range" class="range-slider" id="maxSpeedSlider"
+                       min="60" max="1000" step="20" value="220">
+            </div>
+
+            <!-- تنبيه تجاوز السرة -->
+            <div class="setting-group">
+                <div class="setting-label">
+                    <span>تنبيه حد السرعة</span>
+                    <div class="toggle-switch" id="speedAlertToggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-group" id="speedAlertGroup" style="display:none;">
+                <div class="setting-label">
+                    <span>قيمة التنبيه</span>
+                    <span class="setting-value" id="speedAlertValue">120 km/h</span>
+                </div>
+                <input type="range" class="range-slider" id="speedAlertSlider"
+                       min="20" max="500" step="10" value="120">
+            </div>
+
+            <!-- الوضع الليلي التلقائي -->
+            <div class="setting-group">
+                <div class="setting-label">
+                    <span>إبقاء الشاشة مضاءة</span>
+                    <div class="toggle-switch active" id="wakeLockToggle"></div>
+                </div>
+            </div>
+
+            <!-- وضع الطيران -->
+            <div class="setting-group">
+                <div class="setting-label">
+                    <span>وضع الطيران (Aviation)</span>
+                    <div class="toggle-switch" id="aviationModeToggle"></div>
+                </div>
+            </div>
+
+            <!-- الاهتزاز عند التنبيه -->
+            <div class="setting-group">
+                <div class="setting-label">
+                    <span>الاهتزاز عند التنبيه</span>
+                    <div class="toggle-switch active" id="vibrationToggle"></div>
+                </div>
+            </div>
+
+            <button class="modal-close-btn" id="closeSettingsBtn">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- حاوية رسائل التنبيه (Toast Container) -->
+    <div class="toast-container" id="toastContainer"></div>
+
+
+    <!-- ============================================================ -->
+    <!-- ================== JAVASCRIPT SECTION ====================== -->
+    <!-- ============================================================ -->
+    <script>
+    'use strict';
+
+    /* ================================================================
+       ================================================================
+       قسم 1: المتغيرات العامة والدالة الرئيسية
+       (Global Variables & Main Application Object)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * كائن التطبيق الرئيسي - يحتوي على كل الحالة والمنطق
+     * GPS Speedometer Pro - Application Object
+     */
+    const SpeedometerApp = {
+
+        /* ----------------------------------------------------------
+           الحالة (State)
+           ---------------------------------------------------------- */
+
+        /** هل التطبيق يعمل حالياً؟ */
+        isRunning: false,
+
+        /** معرّف تتبع GPS (من watchPosition) */
+        watchId: null,
+
+        /** آخر قراءة موقع من GPS */
+        lastPosition: null,
+
+        /** الموقع السابق (لحساب السرعة يدوياً عند الحاجة) */
+        previousPosition: null,
+
+        /** آخر طابع زمني للتحديث */
+        lastTimestamp: 0,
+
+        /** السرعة الحالية (بالكيلومتر/ساعة) */
+        currentSpeed: 0,
+
+        /** السرعة المعروضة (تتدرج بسلاسة نحو السرعة الحالية) */
+        displaySpeed: 0,
+
+        /** السرعة القصوى المسجلة */
+        maxSpeed: 0,
+
+        /** مجموع السرعات (لحساب المتوسط) */
+        speedSum: 0,
+
+        /** عدد قراءات السرعة (لحساب المتوسط) */
+        speedCount: 0,
+
+        /** المسافة المقطوعة (بالكيلومتر) */
+        distance: 0,
+
+        /** وقت بدء التتبع */
+        startTime: 0,
+
+        /** مدة التتبع (بالثواني) */
+        duration: 0,
+
+        /** الارتفاع الحالي (بالأمتار) */
+        currentAltitude: 0,
+
+        /** الاتجاه الحالي (بالدرجات) */
+        currentHeading: 0,
+
+        /** دقة GPS الحالية (بالأمتار) */
+        currentAccuracy: 0,
+
+        /** عدد الأقمار الصناعية (تقديري) */
+        satelliteCount: 0,
+
+        /** هل تم استخدام حساب السرعة اليدوي (Fallback)؟ */
+        usingFallbackSpeed: false,
+
+        /** إعدادات التطبيق */
+        settings: {
+            unit: 'kmh',           // الوحدة: kmh, mph, ms, knots
+            maxGaugeSpeed: 220,    // الحد الأقصى للعداد
+            speedAlertEnabled: false,
+            speedAlertValue: 120,
+            wakeLockEnabled: true,
+            aviationMode: false,
+            vibrationEnabled: true,
+        },
+
+        /** مرجع WakeLock */
+        wakeLock: null,
+
+        /** هل تم تنبيه السرعة بالفعل؟ (لمنع التكرار) */
+        speedAlertTriggered: false,
+
+        /** سجل السرعات للرسم البياني */
+        speedHistory: [],
+
+        /** الحد الأقصى لسجل السرعات */
+        maxHistorySize: 60,
+
+        /** معرّف requestAnimationFrame */
+        rafId: null,
+
+        /** وقت آخر تحديث للواجهة */
+        lastUIUpdate: 0,
+
+        /** وقت آخر تحديث للرسم البياني */
+        lastGraphUpdate: 0,
+
+        /** عناصر DOM (يتم تعبئتها في init) */
+        dom: {},
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 2: تهيئة التطبيق
+       (Application Initialization)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * تهيئة التطبيق
+     * يتم استدعاؤها عند تحميل الصفحة
+     */
+    SpeedometerApp.init = function() {
+        // جمع كل عناصر DOM مرة واحدة لتحسين الأداء
+        this.cacheDOMElements();
+
+        // تحميل الإعدادات المحفوظة
+        this.loadSettings();
+
+        // إنشاء علامات العداد الدائري
+        this.createGaugeTicks();
+
+        // ربط الأحداث (Event Listeners)
+        this.bindEvents();
+
+        // تهيئة الرسم البياني
+        this.initSpeedGraph();
+
+        // إخفاء شاشة التحميل بعد فترة قصيرة
+        setTimeout(() => {
+            this.dom.splashScreen.classList.add('hidden');
+        }, 1200);
+
+        // فحص دعم المتصفح لميزات GPS
+        this.checkBrowserSupport();
+
+        // بدء حلقة تحديث الواجهة (UI Loop) فوراً
+        this.startUILoop();
+
+        // عرض رسالة ترحيب
+        setTimeout(() => {
+            this.showToast('اضغط "ابدأ" لبدء قياس السرعة', 'info', 3000);
+        }, 1800);
+
+        console.log('[SpeedometerApp] تم تهيئة التطبيق بنجاح');
+    };
+
+    /**
+     * تخزين عناصر DOM في كائن واحد للوصول السريع
+     * تحسين الأداء: بدلاً من البحث عن العنصر في كل مرة، نبحث مرة واحدة فقط
+     */
+    SpeedometerApp.cacheDOMElements = function() {
+        this.dom = {
+            splashScreen: document.getElementById('splashScreen'),
+            appContainer: document.getElementById('app-container'),
+
+            // شريط الحالة
+            gpsStatusIndicator: document.getElementById('gpsStatusIndicator'),
+            gpsStatusText: document.getElementById('gpsStatusText'),
+            satelliteCount: document.getElementById('satelliteCount'),
+            satCountText: document.getElementById('satCountText'),
+            wakeLockIndicator: document.getElementById('wakeLockIndicator'),
+
+            // العداد
+            gaugeSvg: document.getElementById('gaugeSvg'),
+            gaugeTrackPath: document.getElementById('gaugeTrackPath'),
+            gaugeProgressPath: document.getElementById('gaugeProgressPath'),
+            gaugeTicks: document.getElementById('gaugeTicks'),
+            speedValue: document.getElementById('speedValue'),
+            speedUnit: document.getElementById('speedUnit'),
+
+            // بطاقات البيانات
+            altitudeValue: document.getElementById('altitudeValue'),
+            headingValue: document.getElementById('headingValue'),
+            headingDirection: document.getElementById('headingDirection'),
+            accuracyValue: document.getElementById('accuracyValue'),
+            compassArrow: document.getElementById('compassArrow'),
+
+            // شريط جودة الإشارة
+            signalQualityFill: document.getElementById('signalQualityFill'),
+
+            // شريط المعلومات
+            maxSpeedValue: document.getElementById('maxSpeedValue'),
+            avgSpeedValue: document.getElementById('avgSpeedValue'),
+            distanceValue: document.getElementById('distanceValue'),
+            durationValue: document.getElementById('durationValue'),
+
+            // أزرار التحكم
+            startStopBtn: document.getElementById('startStopBtn'),
+            startStopText: document.getElementById('startStopText'),
+            settingsBtn: document.getElementById('settingsBtn'),
+            resetBtn: document.getElementById('resetBtn'),
+
+            // الإعدادات
+            settingsModal: document.getElementById('settingsModal'),
+            closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+            maxSpeedSlider: document.getElementById('maxSpeedSlider'),
+            maxSpeedSettingValue: document.getElementById('maxSpeedSettingValue'),
+            speedAlertToggle: document.getElementById('speedAlertToggle'),
+            speedAlertGroup: document.getElementById('speedAlertGroup'),
+            speedAlertSlider: document.getElementById('speedAlertSlider'),
+            speedAlertValue: document.getElementById('speedAlertValue'),
+            wakeLockToggle: document.getElementById('wakeLockToggle'),
+            aviationModeToggle: document.getElementById('aviationModeToggle'),
+            vibrationToggle: document.getElementById('vibrationToggle'),
+
+            // الرسم البياني
+            speedGraphCanvas: document.getElementById('speedGraphCanvas'),
+
+            // رسائل التنبيه
+            toastContainer: document.getElementById('toastContainer'),
+        };
+
+        console.log('[SpeedometerApp] تم تخزين عناصر DOM');
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 3: إدارة الإعدادات
+       (Settings Management)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * تحميل الإعدادات من localStorage
+     */
+    SpeedometerApp.loadSettings = function() {
+        try {
+            const saved = localStorage.getItem('speedometer_settings');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                this.settings = { ...this.settings, ...parsed };
+            }
+        } catch (e) {
+            console.warn('[SpeedometerApp] فشل تحميل الإعدادات:', e);
+        }
+
+        // تطبيق الإعدادات على الواجهة
+        this.applySettingsToUI();
+    };
+
+    /**
+     * حفظ الإعدادات في localStorage
+     */
+    SpeedometerApp.saveSettings = function() {
+        try {
+            localStorage.setItem('speedometer_settings', JSON.stringify(this.settings));
+        } catch (e) {
+            console.warn('[SpeedometerApp] فشل حفظ الإعدادات:', e);
+        }
+    };
+
+    /**
+     * تطبيق الإعدادات المحفوظة على عناصر الواجهة
+     */
+    SpeedometerApp.applySettingsToUI = function() {
+        // تحديث أزرار الوحدة
+        document.querySelectorAll('.unit-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.unit === this.settings.unit);
+        });
+
+        // تحديث شريط الحد الأقصى
+        this.dom.maxSpeedSlider.value = this.settings.maxGaugeSpeed;
+        this.updateMaxSpeedSettingDisplay();
+
+        // تحديث مفتاح تنبيه السرعة
+        this.dom.speedAlertToggle.classList.toggle('active', this.settings.speedAlertEnabled);
+        this.dom.speedAlertGroup.style.display = this.settings.speedAlertEnabled ? 'block' : 'none';
+        this.dom.speedAlertSlider.value = this.settings.speedAlertValue;
+        this.updateSpeedAlertDisplay();
+
+        // تحديث مفتاح WakeLock
+        this.dom.wakeLockToggle.classList.toggle('active', this.settings.wakeLockEnabled);
+
+        // تحديث مفتاح وضع الطيران
+        this.dom.aviationModeToggle.classList.toggle('active', this.settings.aviationMode);
+        document.body.classList.toggle('aviation-mode', this.settings.aviationMode);
+
+        // تحديث مفتاح الاهتزاز
+        this.dom.vibrationToggle.classList.toggle('active', this.settings.vibrationEnabled);
+
+        // تحديث وحدة العرض
+        this.updateSpeedUnitDisplay();
+    };
+
+    /**
+     * تحديث عرض قيمة الحد الأقصى للعداد
+     */
+    SpeedometerApp.updateMaxSpeedSettingDisplay = function() {
+        const unit = this.getUnitLabel();
+        this.dom.maxSpeedSettingValue.textContent = `${this.settings.maxGaugeSpeed} ${unit}`;
+    };
+
+    /**
+     * تحديث عرض قيمة تنبيه السرعة
+     */
+    SpeedometerApp.updateSpeedAlertDisplay = function() {
+        const unit = this.getUnitLabel();
+        this.dom.speedAlertValue.textContent = `${this.settings.speedAlertValue} ${unit}`;
+    };
+
+    /**
+     * الحصول على تسمية الوحدة الحالية
+     */
+    SpeedometerApp.getUnitLabel = function() {
+        switch (this.settings.unit) {
+            case 'mph': return 'mph';
+            case 'ms': return 'm/s';
+            case 'knots': return 'knots';
+            default: return 'km/h';
+        }
+    };
+
+    /**
+     * تحديث عرض وحدة السرعة في الواجهة
+     */
+    SpeedometerApp.updateSpeedUnitDisplay = function() {
+        this.dom.speedUnit.textContent = this.getUnitLabel();
+    };
+
+    /**
+     * تحويل السرعة من km/h إلى الوحدة المختارة
+     * @param {number} speedKmh - السرعة بالكيلومتر/ساعة
+     * @returns {number} - السرعة بالوحدة المختارة
+     */
+    SpeedometerApp.convertSpeed = function(speedKmh) {
+        switch (this.settings.unit) {
+            case 'mph': return speedKmh * 0.621371;     // km/h → mph
+            case 'ms': return speedKmh / 3.6;            // km/h → m/s
+            case 'knots': return speedKmh * 0.539957;   // km/h → knots
+            default: return speedKmh;                    // km/h
+        }
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 4: إنشاء العداد الدائري
+       (Circular Gauge Creation)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * إنشاء علامات السرعة (Ticks) على القوس الدائري
+     * يتم إنشاؤها مرة واحدة فقط لتحسين الأداء
+     *
+     * ملاحظة هندسية:
+     * - القوس يمتد من 135° إلى 405° (270° إجمالاً)
+     * - نقطة المركز: (100, 100)
+     * - نصف القطر: 80
+     * - العلامات الكبرى (Major) كل 20 km/h
+     * - العلامات الصغرى (Minor) كل 10 km/h
+     */
+    SpeedometerApp.createGaugeTicks = function() {
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const ticksGroup = this.dom.gaugeTicks;
+        const cx = 100;
+        const cy = 100;
+        const radius = 80;
+        const majorTickLength = 8;
+        const minorTickLength = 4;
+        const tickLabelRadius = 66;
+
+        // عدد العلامات الكبرى (حسب الحد الأقصى)
+        const maxSpeed = this.settings.maxGaugeSpeed;
+        const majorInterval = maxSpeed <= 200 ? 20 : (maxSpeed <= 500 ? 50 : 100);
+        const minorInterval = majorInterval / 2;
+
+        // زاوية البداية والنهاية (بالدرجات)
+        const startAngle = 135;
+        const endAngle = 405;
+        const totalAngle = endAngle - startAngle; // 270 درجة
+
+        // إنشاء العلامات
+        for (let speed = 0; speed <= maxSpeed; speed += minorInterval) {
+            const ratio = speed / maxSpeed;
+            const angle = startAngle + (ratio * totalAngle);
+
+            // تحويل الزاوية إلى راديان
+            const rad = (angle * Math.PI) / 180;
+
+            // هل هي علامة كبرى؟
+            const isMajor = speed % majorInterval === 0;
+            const tickLength = isMajor ? majorTickLength : minorTickLength;
+
+            // نقاط العلامة
+            const x1 = cx + (radius * Math.cos(rad));
+            const y1 = cy + (radius * Math.sin(rad));
+            const x2 = cx + ((radius - tickLength) * Math.cos(rad));
+            const y2 = cy + ((radius - tickLength) * Math.sin(rad));
+
+            // إنشاء خط العلامة
+            const line = document.createElementNS(svgNS, 'line');
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            line.setAttribute('class', isMajor ? 'gauge-tick major' : 'gauge-tick');
+            ticksGroup.appendChild(line);
+
+            // إضافة تسمية للعلامات الكبرى
+            if (isMajor && speed % (majorInterval * 2) === 0) {
+                // حساب موضع التسمية
+                const labelRad = ((angle) * Math.PI) / 180;
+                const lx = cx + (tickLabelRadius * Math.cos(labelRad));
+                const ly = cy + (tickLabelRadius * Math.sin(labelRad));
+
+                const text = document.createElementNS(svgNS, 'text');
+                text.setAttribute('x', lx);
+                text.setAttribute('y', ly);
+                text.setAttribute('class', 'gauge-tick-label');
+                text.setAttribute('transform', `rotate(${-135 + (ratio * 270)}, ${lx}, ${ly})`);
+                text.textContent = speed;
+                ticksGroup.appendChild(text);
+            }
+        }
+
+        // حساب طول مسار القوس (لإستخدامه في stroke-dasharray)
+        // محيط دائرة كاملة = 2 * π * r = 2 * π * 80 ≈ 502.65
+        // قوس 270° = (270/360) * 502.65 ≈ 377
+        const arcLength = (270 / 360) * 2 * Math.PI * radius;
+        this.gaugeArcLength = arcLength;
+
+        // ضبط stroke-dasharray و stroke-dashoffset
+        this.dom.gaugeProgressPath.setAttribute('stroke-dasharray', arcLength);
+        this.dom.gaugeProgressPath.setAttribute('stroke-dashoffset', arcLength);
+    };
+
+    /**
+     * إعادة إنشاء علامات العداد (عند تغيير الحد الأقصى)
+     */
+    SpeedometerApp.recreateGaugeTicks = function() {
+        this.dom.gaugeTicks.innerHTML = '';
+        this.createGaugeTicks();
+    };
+
+    /**
+     * تحديث مؤشر العداد الدائري (Progress Arc)
+     * @param {number} speed - السرعة الحالية بالوحدة المختارة
+     */
+    SpeedometerApp.updateGaugeProgress = function(speed) {
+        const maxSpeed = this.settings.maxGaugeSpeed;
+        const ratio = Math.min(speed / maxSpeed, 1);
+        const arcLength = this.gaugeArcLength || 377;
+
+        // حساب الإزاحة (offset)
+        // عندما تكون السرعة 0 → الإزاحة = طول القوس (مخفي بالكامل)
+        // عندما تكون السرعة = الحد الأقصى → الإزاحة = 0 (ظاهر بالكامل)
+        const offset = arcLength - (ratio * arcLength);
+
+        this.dom.gaugeProgressPath.setAttribute('stroke-dashoffset', offset);
+
+        // تغيير لون القوس حسب السرعة
+        let color;
+        if (ratio < 0.33) {
+            color = '#00ff88'; // أخضر
+        } else if (ratio < 0.66) {
+            color = '#ffcc00'; // أصفر
+        } else if (ratio < 0.85) {
+            color = '#ff8800'; // برتقالي
+        } else {
+            color = '#ff3344'; // أحمر
+        }
+        this.dom.gaugeProgressPath.style.stroke = color;
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 5: إدارة GPS - الجزء الأهم!
+       (GPS Management - Core Functionality)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * فحص دعم المتصفح لميزات GPS
+     */
+    SpeedometerApp.checkBrowserSupport = function() {
+        if (!navigator.geolocation) {
+            this.showToast('المتصفح لا يدعم GPS', 'error', 5000);
+            this.dom.startStopBtn.disabled = true;
+            this.dom.startStopText.textContent = 'غير مدعوم';
+            return false;
+        }
+        return true;
+    };
+
+    /**
+     * بدء تتبع GPS
+     *
+     * ================================================================
+     * هذا هو الجزء الأهم في التطبيق!
+     *
+     * نستخدم navigator.geolocation.watchPosition وليس getCurrentPosition
+     * لأن watchPosition يستمر في استقبال التحديثات تلقائياً من GPS Hardware
+     * بمعدل تحديث يصل إلى 0.45 ثانية على بعض الأجهزة.
+     *
+     * الخيارات الحراسية لضمان أسرع تحديث:
+     * 1. enableHighAccuracy: true
+     *    - يُجبر المتصفح على استخدام GPS Hardware (وليس WiFi/Cell triangulation)
+     *    - يوفر دقة أعلى وسرعة استجابة أفضل
+     *
+     * 2. maximumAge: 0
+     *    - يمنع المتصفح من استخدام البيانات المخزنة مؤقتاً (Cache)
+     *    - يُجبر جلب بيانات جديدة من القمر الصناعي في كل استدعاء
+     *    - هذا ضروري لقياس سرعة لحظية ودقيقة
+     *
+     * 3. timeout: 5000
+     *    - إذا لم يتم استقبال بيانات خلال 5 ثوانٍ، يتم إطلاق خطأ
+     *    - هذا يمنع التطبيق من الانتظار إلى ما لا نهاية
+     * ================================================================
+     */
+    SpeedometerApp.startGPSTracking = async function() {
+
+        // طلب الصلاحيات أولاً (إذا كان الـ Permissions API متاحاً)
+        await this.requestPermissions();
+
+        // خيارات GPS الحراسية
+        const geoOptions = {
+            enableHighAccuracy: true,   // تفعيل GPS عالي الدقة (من الأقمار الصناعية)
+            maximumAge: 0,              // عدم استخدام البيانات المخزنة - جلب بيانات جديدة دائماً
+            timeout: 5000,              // مهلة 5 ثوانٍ قبل اعتبار القراءة فاشلة
+        };
+
+        console.log('[SpeedometerApp] بدء تتبع GPS بالخيارات:', geoOptions);
+
+        // بدء watchPosition
+        // هذا يستدعي onSuccess في كل مرة يتلقى فيها GPS بيانات جديدة
+        // معدل التحديث يعتمد على الجهاز، لكن يمكن أن يصل إلى 0.45 ثانية
+        this.watchId = navigator.geolocation.watchPosition(
+            (position) => this.onGPSSuccess(position),     // دالة النجاح
+            (error) => this.onGPSError(error),             // دالة الخطأ
+            geoOptions                                      // الخيارات
+        );
+
+        // تحديث حالة GPS في الواجهة
+        this.updateGPSStatus('searching');
+
+        // طلب WakeLock لمنع إطفاء الشاشة
+        if (this.settings.wakeLockEnabled) {
+            await this.requestWakeLock();
+        }
+    };
+
+    /**
+     * إيقاف تتبع GPS
+     */
+    SpeedometerApp.stopGPSTracking = function() {
+        if (this.watchId !== null) {
+            navigator.geolocation.clearWatch(this.watchId);
+            this.watchId = null;
+            console.log('[SpeedometerApp] تم إيقاف تتبع GPS');
+        }
+
+        // تحديث حالة GPS
+        this.updateGPSStatus('disconnected');
+
+        // إيقاف السرعة تدريجياً
+        // (سنتركها تنخفض بسلاسة عبر UI Loop)
+
+        // تحرير WakeLock
+        this.releaseWakeLock();
+    };
+
+    /**
+     * طلب صلاحيات GPS بشكل ودي
+     * يستخدم Permissions API إن كانت متاحة
+     */
+    SpeedometerApp.requestPermissions = async function() {
+        // التحقق من دعم Permissions API
+        if (navigator.permissions) {
+            try {
+                const result = await navigator.permissions.query({ name: 'geolocation' });
+
+                console.log('[SpeedometerApp] حالة صلاحية GPS:', result.state);
+
+                if (result.state === 'denied') {
+                    this.showToast(
+                        'تم رفض صلاحية الموقع. يرجى تفعيلها من إعدادات المتصفح',
+                        'error',
+                        5000
+                    );
+                    return false;
+                }
+
+                // الاستماع لتغييرات الصلاحية
+                result.onchange = () => {
+                    console.log('[SpeedometerApp] تغيرت حالة الصلاحية:', result.state);
+                    if (result.state === 'denied' && this.isRunning) {
+                        this.stopTracking();
+                        this.showToast('تم رفض صلاحية الموقع', 'error', 3000);
+                    }
+                };
+
+            } catch (e) {
+                console.warn('[SpeedometerApp] Permissions API غير مدعوم:', e);
+            }
+        }
+
+        return true;
+    };
+
+    /**
+     * ================================================================
+     * دالة معالجة نجاح GPS
+     * (GPS Success Callback)
+     *
+     * هذه الدالة تُستدعى تلقائياً في كل مرة يتلقى فيها GPS بيانات جديدة
+     * قد تصل إلى كل 0.45 ثانية على الأجهزة الحديثة!
+     *
+     * المفتاح هنا: نقرأ السرعة مباشرة من position.coords.speed
+     * ولا نحسبها يدوياً (Haversine) لأن ذلك أبطأ وأقل دقة.
+     * ================================================================
+     *
+     * @param {GeolocationPosition} position - كائن الموقع من GPS
+     */
+    SpeedometerApp.onGPSSuccess = function(position) {
+        const coords = position.coords;
+        const timestamp = position.timestamp;
+
+        console.log(`[GPS] تحديث جديد - الدقة: ${coords.accuracy?.toFixed(1)}م | ` +
+                    `السرعة: ${coords.speed !== null ? (coords.speed * 3.6).toFixed(1) + ' km/h' : 'null'} | ` +
+                    `الارتفاع: ${coords.altitude?.toFixed(0)}م`);
+
+        // تحديث حالة GPS
+        this.updateGPSStatus('connected');
+
+        // ----------------------------------------------------------
+        // 1. قراءة السرعة مباشرة من GPS Hardware
+        // ----------------------------------------------------------
+        // position.coords.speed تعطي السرعة بمتر/ثانية (m/s)
+        // نحوّلها إلى km/h بضربها في 3.6
+        //
+        // هذا هو أسرع وأدق طريقة للحصول على السرعة:
+        // - لا حاجة لحسابات رياضية معقدة (Haversine)
+        // - السرعة تُقاس مباشرة من إزاحة Doppler للأقمار الصناعية
+        // - التحديث فوري من GPS Hardware
+        // ----------------------------------------------------------
+
+        if (coords.speed !== null && coords.speed >= 0 && !isNaN(coords.speed)) {
+            // ============================================================
+            // المسار الأساسي: قراءة السرعة مباشرة من GPS Hardware
+            // ============================================================
+            const speedMs = coords.speed;                    // متر/ثانية
+            const speedKmh = speedMs * 3.6;                  // كيلومتر/ساعة
+
+            this.currentSpeed = speedKmh;
+            this.usingFallbackSpeed = false;
+
+        } else {
+            // ============================================================
+            // المسار البديل (Fallback): حساب السرعة يدوياً
+            // يُستخدم عندما يكون coords.speed = null (بعض الأجهزة القديمة)
+            // ============================================================
+            // نستخدم معادلة Haversine لحساب المسافة بين النقطة الحالية والسابقة
+            // ثم نقسمها على الفارق الزمني للحصول على السرعة
+            //
+            // ملاحظة: هذا أبطأ وأقل دقة من القراءة المباشرة، لكنه ضروري كاحتياطي
+            // ============================================================
+
+            if (this.previousPosition) {
+                const fallbackSpeed = this.calculateSpeedFallback(
+                    this.previousPosition,
+                    position
+                );
+
+                if (fallbackSpeed !== null) {
+                    this.currentSpeed = fallbackSpeed;
+                    this.usingFallbackSpeed = true;
+
+                    console.log('[GPS] استخدام حساب السرعة اليدوي (Fallback):',
+                                fallbackSpeed.toFixed(1), 'km/h');
+                }
+            }
+        }
+
+        // ----------------------------------------------------------
+        // 2. قراءة البيانات الأخرى
+        // ----------------------------------------------------------
+
+        // الارتفاع (Altitude) - مهم للطيران
+        if (coords.altitude !== null && !isNaN(coords.altitude)) {
+            this.currentAltitude = coords.altitude;
+        }
+
+        // الاتجاه (Heading) - بالدرجات من الشمال (0-360)
+        if (coords.heading !== null && !isNaN(coords.heading) && coords.heading >= 0) {
+            this.currentHeading = coords.heading;
+        }
+
+        // الدقة (Accuracy) - نصف قطر الخطأ بالأمتار
+        if (coords.accuracy !== null && !isNaN(coords.accuracy)) {
+            this.currentAccuracy = coords.accuracy;
+        }
+
+        // ----------------------------------------------------------
+        // 3. تحديث الإحصائيات
+        // ----------------------------------------------------------
+
+        // السرعة القصوى
+        if (this.currentSpeed > this.maxSpeed) {
+            this.maxSpeed = this.currentSpeed;
+        }
+
+        // مجموع السرعات للمتوسط
+        if (this.currentSpeed > 0) {
+            this.speedSum += this.currentSpeed;
+            this.speedCount++;
+        }
+
+        // حساب المسافة المقطوعة
+        if (this.previousPosition) {
+            const segmentDistance = this.calculateDistance(
+                this.previousPosition.coords.latitude,
+                this.previousPosition.coords.longitude,
+                coords.latitude,
+                coords.longitude
+            );
+
+            // فقط إذا كانت المسافة معقولة (لتجنب القفزات بسبب ضعف الإشارة)
+            if (segmentDistance > 0 && segmentDistance < 1) { // أقل من 1 كم في قراءة واحدة
+                this.distance += segmentDistance;
+            }
+        }
+
+        // ----------------------------------------------------------
+        // 4. تقدير عدد الأقمار الصناعية (بناءً على الدقة)
+        // ----------------------------------------------------------
+        // لا توفر Geolocation API عدد الأقمار الصناعية مباشرة
+        // لكن يمكن تقديره بناءً على الدقة:
+        // - دقة < 5م → ممتاز (8+ أقمار)
+        // - دقة < 10م → جيد (5-7 أقمار)
+        // - دقة < 20م → متوسط (3-4 أقمار)
+        // - دقة > 20م → ضعيف (1-2 أقمار)
+        if (this.currentAccuracy > 0) {
+            if (this.currentAccuracy < 5) this.satelliteCount = '8+';
+            else if (this.currentAccuracy < 10) this.satelliteCount = '5-7';
+            else if (this.currentAccuracy < 20) this.satelliteCount = '3-4';
+            else this.satelliteCount = '1-2';
+        }
+
+        // ----------------------------------------------------------
+        // 5. حفظ الموقع الحالي كـ "سابق" للحسابات القادمة
+        // ----------------------------------------------------------
+        this.previousPosition = position;
+        this.lastPosition = position;
+        this.lastTimestamp = timestamp;
+
+        // ----------------------------------------------------------
+        // 6. فحص تنبيه السرعة
+        // ----------------------------------------------------------
+        this.checkSpeedAlert();
+    };
+
+    /**
+     * ================================================================
+     * دالة الحساب البديل للسرعة (Fallback Speed Calculation)
+     *
+     * تُستخدم عندما لا يوفر GPS قيمة coords.speed
+     * تحسب السرعة بناءً على المسافة والوقت بين نقطتين
+     *
+     * معادلة Haversine لحساب المسافة بين نقطتين جغرافيتين
+     * ================================================================
+     *
+     * @param {GeolocationPosition} prevPos - الموقع السابق
+     * @param {GeolocationPosition} currPos - الموقع الحالي
+     * @returns {number|null} - السرعة بـ km/h أو null
+     */
+    SpeedometerApp.calculateSpeedFallback = function(prevPos, currPos) {
+        const prevCoords = prevPos.coords;
+        const currCoords = currPos.coords;
+
+        // حساب المسافة (بالكيلومتر) باستخدام Haversine
+        const distanceKm = this.calculateDistance(
+            prevCoords.latitude,
+            prevCoords.longitude,
+            currCoords.latitude,
+            currCoords.longitude
+        );
+
+        // حساب الفارق الزمني (بالساعات)
+        const timeDiffMs = currPos.timestamp - prevPos.timestamp;
+        const timeDiffHours = timeDiffMs / (1000 * 60 * 60);
+
+        // التحقق من صحة الفارق الزمني
+        if (timeDiffMs <= 0 || timeDiffHours <= 0) {
+            return null;
+        }
+
+        // السرعة = المسافة / الزمن
+        const speedKmh = distanceKm / timeDiffHours;
+
+        // فلتر للتخلض من القيم غير المنطقية (أكثر من 1000 km/h غير منطقي للسيارات)
+        if (speedKmh > 1000 || isNaN(speedKmh) || speedKmh < 0) {
+            return null;
+        }
+
+        return speedKmh;
+    };
+
+    /**
+     * حساب المسافة بين نقطتين جغرافيتين باستخدام معادلة Haversine
+     *
+     * @param {number} lat1 - خط عرض النقطة الأولى
+     * @param {number} lon1 - خط طول النقطة الأولى
+     * @param {number} lat2 - خط عرض النقطة الثانية
+     * @param {number} lon2 - خط طول النقطة الثانية
+     * @returns {number} - المسافة بالكيلومتر
+     */
+    SpeedometerApp.calculateDistance = function(lat1, lon1, lat2, lon2) {
+        const R = 6371; // نصف قطر الأرض بالكيلومتر
+
+        // تحويل الفروق من درجات إلى راديان
+        const dLat = this.toRad(lat2 - lat1);
+        const dLon = this.toRad(lon2 - lon1);
+
+        // معادلة Haversine
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // المسافة بالكيلومتر
+    };
+
+    /**
+     * تحويل من درجات إلى راديان
+     */
+    SpeedometerApp.toRad = function(degrees) {
+        return degrees * (Math.PI / 180);
+    };
+
+    /**
+     * دالة معالجة خطأ GPS
+     *
+     * @param {GeolocationPositionError} error - كائن الخطأ
+     */
+    SpeedometerApp.onGPSError = function(error) {
+        console.error('[GPS] خطأ:', error.code, error.message);
+
+        let errorMessage = '';
+        let errorType = 'error';
+
+        switch (error.code) {
+            case error.PERMISSION_DENIED:
+                errorMessage = 'تم رفض صلاحية الموقع. يرجى السماح بالوصول للموقع';
+                this.updateGPSStatus('error');
+                this.stopTracking();
+                break;
+
+            case error.POSITION_UNAVAILABLE:
+                errorMessage = 'لا يمكن تحديد الموقع. تحقق من إشارة GPS';
+                this.updateGPSStatus('error');
+                // لا نوقف التتبع، قد تتحسن الإشارة
+                break;
+
+            case error.TIMEOUT:
+                // المهلة انتهت - شائع مع maximumAge: 0
+                // لا نعرض رسالة للمستخدم لأنها قد تتكرر كثيراً
+                console.warn('[GPS] انتهت المهلة - في انتظار إشارة أفضل');
+                this.updateGPSStatus('searching');
+                return; // لا نعرض toast للمهلة
+
+            default:
+                errorMessage = 'خطأ غير معروف في GPS: ' + error.message;
+                this.updateGPSStatus('error');
+                break;
+        }
+
+        if (errorMessage) {
+            this.showToast(errorMessage, errorType, 4000);
+        }
+    };
+
+    /**
+     * تحديث حالة GPS في الواجهة
+     *
+     * @param {string} status - الحالة: 'connected', 'searching', 'disconnected', 'error'
+     */
+    SpeedometerApp.updateGPSStatus = function(status) {
+        const indicator = this.dom.gpsStatusIndicator;
+        const text = this.dom.gpsStatusText;
+
+        // إزالة كل الفئات السابقة
+        indicator.classList.remove('active', 'error');
+
+        switch (status) {
+            case 'connected':
+                indicator.classList.add('active');
+                text.textContent = 'GPS: متصل';
+                break;
+
+            case 'searching':
+                text.textContent = 'GPS: بحث...';
+                break;
+
+            case 'error':
+                indicator.classList.add('error');
+                text.textContent = 'GPS: خطأ';
+                break;
+
+            case 'disconnected':
+            default:
+                text.textContent = 'GPS: غير متصل';
+                break;
+        }
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 6: حلقة تحديث الواجهة (UI Loop)
+       باستخدام requestAnimationFrame لضمان 60 FPS
+       ================================================================
+       ================================================================ */
+
+    /**
+     * بدء حلقة تحديث الواجهة
+     *
+     * ================================================================
+     * نستخدم requestAnimationFrame بدلاً من setInterval لتحديث الواجهة
+     * هذا يضمن:
+     * 1. تحديث الواجهة بمعدل 60 إطار/ثانية (أو أعلى على شاشات 120Hz)
+     * 2. تحديثات سلسة بدون تقطيع (Jank-free)
+     * 3. توقف التحديث تلقائياً عندما تكون الصفحة في الخلفية (توفير البطارية)
+     * 4. مزامنة مع معدل تحديث الشاشة (V-Sync)
+     *
+     * حتى لو كانت بيانات GPS تتأخر قليلاً (مثلاً كل 0.5 ثانية)،
+     * فإن الواجهة ستظل سلسة لأننا نُحدّث العرض باستمرار مع
+     * تدرّج (interpolation) للسرعة المعروضة.
+     * ================================================================
+     */
+    SpeedometerApp.startUILoop = function() {
+        /**
+         * دالة التحديث الرئيسية (تُستدعى كل إطار)
+         * @param {number} timestamp - الطابع الزمني الحالي
+         */
+        const updateLoop = (timestamp) => {
+
+            // ----------------------------------------------------------
+            // 1. تدرّج السرعة المعروضة (Speed Interpolation)
+            // ----------------------------------------------------------
+            // بدلاً من عرض السرعة فجأة (قد تبدو متقطعة)،
+            // نقوم بتدرّج السرعة المعروضة بسلاسة نحو السرعة الفعلية
+            // هذا يجعل التغييرات تبدو سلسة جداً حتى لو كانت تحديثات GPS متباعدة
+
+            const speedDiff = this.currentSpeed - this.displaySpeed;
+
+            // عامل التدرّج (Interpolation Factor)
+            // 0.15 يعني أننا نقترب 15% من الفرق في كل إطار
+            // هذا يعطي تأثيراً سلساً وسريع الاستجابة
+            const interpolationFactor = 0.15;
+
+            this.displaySpeed += speedDiff * interpolationFactor;
+
+            // إذا كان الفرق صغيراً جداً، نضبط القيمة مباشرة (لتجنب الاهتزاز)
+            if (Math.abs(speedDiff) < 0.1) {
+                this.displaySpeed = this.currentSpeed;
+            }
+
+            // إذا لم يكن التتبع يعمل، نقوم بخفض السرعة تدريجياً إلى 0
+            if (!this.isRunning && this.displaySpeed > 0.1) {
+                this.displaySpeed *= 0.92; // تقليل 8% في كل إطار
+            } else if (!this.isRunning && this.displaySpeed <= 0.1) {
+                this.displaySpeed = 0;
+            }
+
+            // ----------------------------------------------------------
+            // 2. تحديث عرض السرعة
+            // ----------------------------------------------------------
+            // تحويل السرعة إلى الوحدة المختارة
+            const displaySpeedConverted = this.convertSpeed(this.displaySpeed);
+
+            // عرض السرعة (بدون كسور إذا كانت > 100، بخلاف ذلك منزلة عشرية واحدة)
+            let speedText;
+            if (displaySpeedConverted >= 100) {
+                speedText = Math.round(displaySpeedConverted).toString();
+            } else {
+                speedText = displaySpeedConverted.toFixed(1);
+            }
+
+            this.dom.speedValue.textContent = speedText;
+
+            // ----------------------------------------------------------
+            // 3. تحديث لون السرعة حسب المدى
+            // ----------------------------------------------------------
+            this.updateSpeedColor(displaySpeedConverted);
+
+            // ----------------------------------------------------------
+            // 4. تحديث العداد الدائري
+            // ----------------------------------------------------------
+            this.updateGaugeProgress(displaySpeedConverted);
+
+            // ----------------------------------------------------------
+            // 5. تحديث بطاقات البيانات (كل ~200ms لتقليل العبء)
+            // ----------------------------------------------------------
+            if (timestamp - this.lastUIUpdate > 200) {
+                this.updateDataCards();
+                this.updateInfoStrip();
+                this.updateSignalQuality();
+                this.lastUIUpdate = timestamp;
+            }
+
+            // ----------------------------------------------------------
+            // 6. تحديث الرسم البياني (كل ~500ms)
+            // ----------------------------------------------------------
+            if (timestamp - this.lastGraphUpdate > 500) {
+                if (this.isRunning) {
+                    this.speedHistory.push(this.currentSpeed);
+                    if (this.speedHistory.length > this.maxHistorySize) {
+                        this.speedHistory.shift();
+                    }
+                }
+                this.drawSpeedGraph();
+                this.lastGraphUpdate = timestamp;
+            }
+
+            // ----------------------------------------------------------
+            // 7. تحديث مدة التتبع
+            // ----------------------------------------------------------
+            if (this.isRunning && this.startTime > 0) {
+                this.duration = (Date.now() - this.startTime) / 1000;
+                this.updateDurationDisplay();
+            }
+
+            // ----------------------------------------------------------
+            // 8. تحديث مؤشر WakeLock
+            // ----------------------------------------------------------
+            this.updateWakeLockIndicator();
+
+            // طلب الإطار التالي
+            this.rafId = requestAnimationFrame(updateLoop);
+        };
+
+        // بدء الحلقة
+        this.rafId = requestAnimationFrame(updateLoop);
+        console.log('[SpeedometerApp] بدأت حلقة تحديث الواجهة (60 FPS)');
+    };
+
+    /**
+     * تحديث لون السرعة حسب المدى
+     *
+     * @param {number} speed - السرعة بالوحدة الحالية
+     */
+    SpeedometerApp.updateSpeedColor = function(speed) {
+        const maxSpeed = this.settings.maxGaugeSpeed;
+        const ratio = speed / maxSpeed;
+
+        // إزالة كل الفئات السابقة
+        this.dom.speedValue.classList.remove('low', 'mid', 'high', 'max');
+
+        // إضافة الفئة المناسبة
+        if (ratio < 0.33) {
+            this.dom.speedValue.classList.add('low');
+        } else if (ratio < 0.66) {
+            this.dom.speedValue.classList.add('mid');
+        } else if (ratio < 0.85) {
+            this.dom.speedValue.classList.add('high');
+        } else {
+            this.dom.speedValue.classList.add('max');
+        }
+    };
+
+    /**
+     * تحديث بطاقات البيانات (الارتفاع، الاتجاه، الدقة)
+     */
+    SpeedometerApp.updateDataCards = function() {
+        // الارتفاع
+        if (this.currentAltitude !== 0) {
+            this.dom.altitudeValue.textContent = Math.round(this.currentAltitude);
+        }
+
+        // الاتجاه
+        if (this.currentHeading >= 0 && this.currentHeading <= 360) {
+            this.dom.headingValue.textContent = Math.round(this.currentHeading) + '°';
+            this.dom.headingDirection.textContent = this.getCardinalDirection(this.currentHeading);
+
+            // تدوير سهم البوصلة
+            this.dom.compassArrow.style.transform = `rotate(${this.currentHeading}deg)`;
+        }
+
+        // الدقة
+        if (this.currentAccuracy > 0) {
+            this.dom.accuracyValue.textContent = this.currentAccuracy.toFixed(1);
+        }
+
+        // عدد الأقمار الصناعية
+        if (this.satelliteCount !== 0) {
+            this.dom.satCountText.textContent = this.satelliteCount;
+        }
+    };
+
+    /**
+     * تحويل الزاوية إلى اتجاه أساسي (N, NE, E, ...)
+     *
+     * @param {number} heading - الزاوية بالدرجات (0-360)
+     * @returns {string} - الاتجاه الأساسي
+     */
+    SpeedometerApp.getCardinalDirection = function(heading) {
+        const directions = [
+            'شمال',       // 0° - 22.5°
+            'شمال شرقي',  // 22.5° - 67.5°
+            'شرق',        // 67.5° - 112.5°
+            'جنوب شرقي',  // 112.5° - 157.5°
+            'جنوب',       // 157.5° - 202.5°
+            'جنوب غربي',  // 202.5° - 247.5°
+            'غرب',        // 247.5° - 292.5°
+            'شمال غربي'   // 292.5° - 337.5°
+        ];
+
+        const index = Math.round(heading / 45) % 8;
+        return directions[index];
+    };
+
+    /**
+     * تحديث شريط المعلومات (السرعة القصوى، المتوسطة، المسافة، المدة)
+     */
+    SpeedometerApp.updateInfoStrip = function() {
+        const unit = this.getUnitLabel();
+
+        // السرعة القصوى
+        this.dom.maxSpeedValue.textContent =
+            this.convertSpeed(this.maxSpeed).toFixed(0) + ' ' + unit;
+
+        // السرعة المتوسطة
+        const avgSpeed = this.speedCount > 0 ? this.speedSum / this.speedCount : 0;
+        this.dom.avgSpeedValue.textContent =
+            this.convertSpeed(avgSpeed).toFixed(0) + ' ' + unit;
+
+        // المسافة
+        this.dom.distanceValue.textContent =
+            this.distance.toFixed(2) + ' كم';
+    };
+
+    /**
+     * تحديث عرض المدة الزمنية
+     */
+    SpeedometerApp.updateDurationDisplay = function() {
+        const minutes = Math.floor(this.duration / 60);
+        const seconds = Math.floor(this.duration % 60);
+
+        const formatTime = (n) => n < 10 ? '0' + n : n;
+
+        if (this.duration >= 3600) {
+            const hours = Math.floor(this.duration / 3600);
+            const mins = Math.floor((this.duration % 3600) / 60);
+            const secs = Math.floor(this.duration % 60);
+            this.dom.durationValue.textContent =
+                `${formatTime(hours)}:${formatTime(mins)}:${formatTime(secs)}`;
+        } else {
+            this.dom.durationValue.textContent =
+                `${formatTime(minutes)}:${formatTime(seconds)}`;
+        }
+    };
+
+    /**
+     * تحديث شريط جودة الإشارة
+     */
+    SpeedometerApp.updateSignalQuality = function() {
+        let quality = 0;
+
+        if (this.currentAccuracy > 0) {
+            // تحويل الدقة إلى نسبة جودة (كلما قلت الدقة، زادت الجودة)
+            if (this.currentAccuracy < 5) {
+                quality = 100;
+            } else if (this.currentAccuracy < 10) {
+                quality = 80;
+            } else if (this.currentAccuracy < 20) {
+                quality = 50;
+            } else if (this.currentAccuracy < 50) {
+                quality = 25;
+            } else {
+                quality = 10;
+            }
+        }
+
+        this.dom.signalQualityFill.style.width = quality + '%';
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 7: الرسم البياني للسرعة (Speed Graph)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * تهيئة الرسم البياني للسرعة
+     */
+    SpeedometerApp.initSpeedGraph = function() {
+        const canvas = this.dom.speedGraphCanvas;
+        const ctx = canvas.getContext('2d');
+
+        // ضبط حجم الـ Canvas حسب كثافة البكسل (DPR)
+        const resizeCanvas = () => {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+        };
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+    };
+
+    /**
+     * رسم الرسم البياني للسرعة
+     */
+    SpeedometerApp.drawSpeedGraph = function() {
+        const canvas = this.dom.speedGraphCanvas;
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+
+        const width = rect.width;
+        const height = rect.height;
+
+        // مسح الـ Canvas
+        ctx.clearRect(0, 0, width, height);
+
+        if (this.speedHistory.length < 2) {
+            return;
+        }
+
+        // إيجاد السرعة القصوى في السجل
+        const maxSpeedInHistory = Math.max(...this.speedHistory, 10);
+        const padding = 2;
+
+        // رسم الخط
+        ctx.beginPath();
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        const stepX = width / (this.maxHistorySize - 1);
+
+        this.speedHistory.forEach((speed, index) => {
+            const x = index * stepX;
+            const y = height - ((speed / maxSpeedInHistory) * (height - padding * 2)) - padding;
+
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+
+        ctx.stroke();
+
+        // تعبئة المنطقة تحت الخط (Gradient)
+        ctx.lineTo(width, height);
+        ctx.lineTo(0, height);
+        ctx.closePath();
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, 'rgba(0, 240, 255, 0.3)');
+        gradient.addColorStop(1, 'rgba(0, 240, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 8: إدارة WakeLock (منع إطفاء الشاشة)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * طلب WakeLock لمنع إطفاء الشاشة
+     *
+     * ================================================================
+     * navigator.wakeLock.request('screen') يمنع المتصفح من إطفاء الشاشة
+     * هذا ضروري جداً لتطبيق عداد السرعة لأن:
+     * 1. المستخدم يحتاج لرؤية السرعة أثناء القيادة
+     * 2. إطفاء الشاشة قد يُوقف تحديثات GPS في بعض المتصفحات
+     * 3. يوفر تجربة استخدام مستمرة بدون انقطاع
+     *
+     * ملاحظة: WakeLock يتطلب HTTPS أو localhost للعمل
+     * ================================================================
+     */
+    SpeedometerApp.requestWakeLock = async function() {
+        // التحقق من دعم WakeLock API
+        if (!('wakeLock' in navigator)) {
+            console.warn('[SpeedometerApp] المتصفح لا يدعم WakeLock API');
+            this.showToast('المتصفح لا يدعم منع إطفاء الشاشة', 'warning', 3000);
+            return;
+        }
+
+        try {
+            // طلب WakeLock من نوع 'screen'
+            this.wakeLock = await navigator.wakeLock.request('screen');
+            console.log('[SpeedometerApp] تم تفعيل WakeLock - الشاشة ستظل مضاءة');
+
+            // الاستماع لتحرير WakeLock (مثلاً عند تبديل التبويب)
+            this.wakeLock.addEventListener('release', () => {
+                console.log('[SpeedometerApp] تم تحرير WakeLock');
+                this.wakeLock = null;
+            });
+
+        } catch (e) {
+            console.error('[SpeedometerApp] فشل تفعيل WakeLock:', e);
+        }
+    };
+
+    /**
+     * تحرير WakeLock
+     */
+    SpeedometerApp.releaseWakeLock = function() {
+        if (this.wakeLock !== null) {
+            this.wakeLock.release()
+                .then(() => {
+                    console.log('[SpeedometerApp] تم تحرير WakeLock');
+                    this.wakeLock = null;
+                })
+                .catch((e) => {
+                    console.error('[SpeedometerApp] فشل تحرير WakeLock:', e);
+                });
+        }
+    };
+
+    /**
+     * تحديث مؤشر WakeLock في الواجهة
+     */
+    SpeedometerApp.updateWakeLockIndicator = function() {
+        const indicator = this.dom.wakeLockIndicator;
+        const isActive = this.wakeLock !== null;
+
+        indicator.classList.toggle('active', isActive);
+        indicator.querySelector('span:last-child').textContent =
+            isActive ? 'مضاءة' : 'الشاشة';
+    };
+
+    /**
+     * إعادة طلب WakeLock عند العودة للتطبيق
+     * (يُستدعى عند visibilitychange)
+     */
+    SpeedometerApp.handleVisibilityChange = async function() {
+        if (document.visibilityState === 'visible' && this.isRunning && this.settings.wakeLockEnabled) {
+            // إعادة طلب WakeLock
+            if (this.wakeLock === null) {
+                await this.requestWakeLock();
+            }
+        }
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 9: تنبيهات السرعة (Speed Alerts)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * فحص تجاوز حد السرة
+     */
+    SpeedometerApp.checkSpeedAlert = function() {
+        if (!this.settings.speedAlertEnabled) {
+            return;
+        }
+
+        const alertSpeedKmh = this.settings.speedAlertValue;
+        const currentSpeedKmh = this.currentSpeed;
+
+        // إذا تجاوزت السرعة الحد
+        if (currentSpeedKmh >= alertSpeedKmh && !this.speedAlertTriggered) {
+            this.speedAlertTriggered = true;
+            this.triggerSpeedAlert();
+        }
+
+        // إذا انخفضت السرعة عن الحد (بفارق 5 km/h لإعادة التفعيل)
+        if (currentSpeedKmh < (alertSpeedKmh - 5) && this.speedAlertTriggered) {
+            this.speedAlertTriggered = false;
+        }
+    };
+
+    /**
+     * تنشيط تنبيه السرعة
+     */
+    SpeedometerApp.triggerSpeedAlert = function() {
+        console.log('[SpeedometerApp] تنبيه السرعة! تجاوز الحد');
+
+        // اهتزاز الجهاز (إذا كان مدعوماً ومُفعّلاً)
+        if (this.settings.vibrationEnabled && navigator.vibrate) {
+            navigator.vibrate([200, 100, 200, 100, 400]);
+        }
+
+        // رسالة تنبيه
+        this.showToast(
+            `⚠️ تجاوز حد السرعة: ${this.settings.speedAlertValue} ${this.getUnitLabel()}`,
+            'warning',
+            3000
+        );
+
+        // وميض الشاشة
+        this.dom.appContainer.style.animation = 'none';
+        setTimeout(() => {
+            this.dom.appContainer.style.animation = '';
+        }, 10);
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 10: التحكم في التتبع (Start/Stop/Reset)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * بدء التتبع
+     */
+    SpeedometerApp.startTracking = async function() {
+        console.log('[SpeedometerApp] بدء التتبع...');
+
+        // التحقق من دعم GPS
+        if (!this.checkBrowserSupport()) {
+            return;
+        }
+
+        // تحديث الحالة
+        this.isRunning = true;
+        this.startTime = Date.now();
+
+        // إعادة تعيين السرعة المعروضة
+        this.speedAlertTriggered = false;
+
+        // تحديث زر البدء/الإيقاف
+        this.dom.startStopBtn.classList.add('running');
+        this.dom.startStopText.textContent = 'إيقاف';
+
+        // بدء تتبع GPS
+        await this.startGPSTracking();
+
+        // رسالة
+        this.showToast('بدأ قياس السرعة', 'success', 2000);
+    };
+
+    /**
+     * إيقاف التتبع
+     */
+    SpeedometerApp.stopTracking = function() {
+        console.log('[SpeedometerApp] إيقاف التتبع...');
+
+        // تحديث الحالة
+        this.isRunning = false;
+
+        // إيقاف GPS
+        this.stopGPSTracking();
+
+        // تحديث زر البدء/الإيقاف
+        this.dom.startStopBtn.classList.remove('running');
+        this.dom.startStopText.textContent = 'ابدأ';
+
+        // إيقاف الاهتزاز
+        if (navigator.vibrate) {
+            navigator.vibrate(0);
+        }
+
+        // رسالة
+        this.showToast('تم إيقاف القياس', 'info', 2000);
+    };
+
+    /**
+     * تبديل حالة التتبع (بدء/إيقاف)
+     */
+    SpeedometerApp.toggleTracking = function() {
+        if (this.isRunning) {
+            this.stopTracking();
+        } else {
+            this.startTracking();
+        }
+    };
+
+    /**
+     * إعادة تعيين الإحصائيات
+     */
+    SpeedometerApp.resetStats = function() {
+        console.log('[SpeedometerApp] إعادة تعيين الإحصائيات...');
+
+        this.maxSpeed = 0;
+        this.speedSum = 0;
+        this.speedCount = 0;
+        this.distance = 0;
+        this.duration = 0;
+        this.startTime = this.isRunning ? Date.now() : 0;
+        this.speedHistory = [];
+        this.currentSpeed = 0;
+        this.displaySpeed = 0;
+        this.currentAltitude = 0;
+        this.currentHeading = 0;
+        this.currentAccuracy = 0;
+        this.previousPosition = null;
+        this.speedAlertTriggered = false;
+
+        // إعادة تعيين العرض
+        this.dom.altitudeValue.textContent = '---';
+        this.dom.headingValue.textContent = '---';
+        this.dom.headingDirection.textContent = '---';
+        this.dom.accuracyValue.textContent = '---';
+        this.dom.satCountText.textContent = '--';
+
+        this.showToast('تم إعادة التعيين', 'success', 1500);
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 11: رسائل التنبيه (Toast Notifications)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * عرض رسالة تنبيه (Toast)
+     *
+     * @param {string} message - نص الرسالة
+     * @param {string} type - النوع: 'success', 'error', 'warning', 'info'
+     * @param {number} duration - المدة بالميلي ثانية
+     */
+    SpeedometerApp.showToast = function(message, type = 'info', duration = 3000) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+
+        // أيقونة حسب النوع
+        const icons = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+        };
+
+        toast.innerHTML = `
+            <span style="font-size: 1.1rem;">${icons[type] || icons.info}</span>
+            <span>${message}</span>
+        `;
+
+        this.dom.toastContainer.appendChild(toast);
+
+        // عرض الرسالة
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+
+        // إخفاء الرسالة بعد المدة المحددة
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, duration);
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 12: ربط الأحداث (Event Binding)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * ربط جميع أحداث الواجهة
+     */
+    SpeedometerApp.bindEvents = function() {
+
+        // زر البدء/الإيقاف
+        this.dom.startStopBtn.addEventListener('click', () => {
+            this.toggleTracking();
+        });
+
+        // زر إعادة التعيين
+        this.dom.resetBtn.addEventListener('click', () => {
+            this.resetStats();
+        });
+
+        // زر الإعدادات
+        this.dom.settingsBtn.addEventListener('click', () => {
+            this.openSettings();
+        });
+
+        // زر إغلاق الإعدادات
+        this.dom.closeSettingsBtn.addEventListener('click', () => {
+            this.closeSettings();
+        });
+
+        // النقر خارج نافذة الإعدادات
+        this.dom.settingsModal.addEventListener('click', (e) => {
+            if (e.target === this.dom.settingsModal) {
+                this.closeSettings();
+            }
+        });
+
+        // أزرار الوحدة
+        document.querySelectorAll('.unit-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.settings.unit = btn.dataset.unit;
+                this.updateSpeedUnitDisplay();
+                this.updateMaxSpeedSettingDisplay();
+                this.updateSpeedAlertDisplay();
+                this.saveSettings();
+                this.recreateGaugeTicks();
+            });
+        });
+
+        // شريط الحد الأقصى للعداد
+        this.dom.maxSpeedSlider.addEventListener('input', (e) => {
+            this.settings.maxGaugeSpeed = parseInt(e.target.value);
+            this.updateMaxSpeedSettingDisplay();
+            this.recreateGaugeTicks();
+            this.saveSettings();
+        });
+
+        // مفتاح تنبيه السرعة
+        this.dom.speedAlertToggle.addEventListener('click', () => {
+            this.settings.speedAlertEnabled = !this.settings.speedAlertEnabled;
+            this.dom.speedAlertToggle.classList.toggle('active', this.settings.speedAlertEnabled);
+            this.dom.speedAlertGroup.style.display =
+                this.settings.speedAlertEnabled ? 'block' : 'none';
+            this.saveSettings();
+        });
+
+        // شريط قيمة التنبيه
+        this.dom.speedAlertSlider.addEventListener('input', (e) => {
+            this.settings.speedAlertValue = parseInt(e.target.value);
+            this.updateSpeedAlertDisplay();
+            this.saveSettings();
+        });
+
+        // مفتاح WakeLock
+        this.dom.wakeLockToggle.addEventListener('click', () => {
+            this.settings.wakeLockEnabled = !this.settings.wakeLockEnabled;
+            this.dom.wakeLockToggle.classList.toggle('active', this.settings.wakeLockEnabled);
+            this.saveSettings();
+
+            if (this.settings.wakeLockEnabled && this.isRunning) {
+                this.requestWakeLock();
+            } else if (!this.settings.wakeLockEnabled) {
+                this.releaseWakeLock();
+            }
+        });
+
+        // مفتاح وضع الطيران
+        this.dom.aviationModeToggle.addEventListener('click', () => {
+            this.settings.aviationMode = !this.settings.aviationMode;
+            this.dom.aviationModeToggle.classList.toggle('active', this.settings.aviationMode);
+            document.body.classList.toggle('aviation-mode', this.settings.aviationMode);
+            this.saveSettings();
+        });
+
+        // مفتاح الاهتزاز
+        this.dom.vibrationToggle.addEventListener('click', () => {
+            this.settings.vibrationEnabled = !this.settings.vibrationEnabled;
+            this.dom.vibrationToggle.classList.toggle('active', this.settings.vibrationEnabled);
+            this.saveSettings();
+
+            // اختبار الاهتزاز
+            if (this.settings.vibrationEnabled && navigator.vibrate) {
+                navigator.vibrate(100);
+            }
+        });
+
+        // ================================================================
+        // أحداث دورة حياة الصفحة (Page Lifecycle Events)
+        // ================================================================
+
+        // عند تبديل التبويب أو تصغير التطبيق
+        document.addEventListener('visibilitychange', () => {
+            this.handleVisibilityChange();
+        });
+
+        // عند العودة من الخلفية (Page Show)
+        window.addEventListener('pageshow', (e) => {
+            if (e.persisted && this.isRunning) {
+                console.log('[SpeedometerApp] العودة من الخلفية (BFCache)');
+                // إعادة طلب WakeLock
+                if (this.settings.wakeLockEnabled) {
+                    this.requestWakeLock();
+                }
+            }
+        });
+
+        // عند محاولة مغادرة الصفحة
+        window.addEventListener('beforeunload', (e) => {
+            if (this.isRunning) {
+                // تنظيف الموارد
+                this.stopGPSTracking();
+                this.releaseWakeLock();
+            }
+        });
+
+        // ================================================================
+        // أحداث اللمس والإيماءات (Touch & Gesture Events)
+        // ================================================================
+
+        // منع التكبير بالإصبعين (Pinch Zoom)
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
+        document.addEventListener('gesturechange', (e) => e.preventDefault());
+
+        // منع النقر المزدوج للتكبير
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // ================================================================
+        // أحداث الأجهزة (Device Events)
+        // ================================================================
+
+        // اهتزاز الجهاز (إذا كان مدعوماً)
+        if ('ondevicemotion' in window) {
+            // يمكن استخدام بيانات التسارع لتحسين دقة السرعة
+            // لكن هذا متقدم ولا يستخدم حالياً
+        }
+
+        // ================================================================
+        // اختصارات لوحة المفاتيح (Keyboard Shortcuts)
+        // ================================================================
+        document.addEventListener('keydown', (e) => {
+            // مسافة (Space) = بدء/إيقاف
+            if (e.code === 'Space') {
+                e.preventDefault();
+                this.toggleTracking();
+            }
+
+            // R = إعادة تعيين
+            if (e.code === 'KeyR') {
+                this.resetStats();
+            }
+
+            // S = الإعدادات
+            if (e.code === 'KeyS') {
+                this.openSettings();
+            }
+
+            // Escape = إغلاق الإعدادات
+            if (e.code === 'Escape') {
+                this.closeSettings();
+            }
+        });
+
+        console.log('[SpeedometerApp] تم ربط جميع الأحداث');
+    };
+
+    /**
+     * فتح نافذة الإعدادات
+     */
+    SpeedometerApp.openSettings = function() {
+        this.dom.settingsModal.classList.add('visible');
+    };
+
+    /**
+     * إغلاق نافذة الإعدادات
+     */
+    SpeedometerApp.closeSettings = function() {
+        this.dom.settingsModal.classList.remove('visible');
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 13: أدوات مساعدة (Utility Functions)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * تنسيق الأرقام
+     */
+    SpeedometerApp.formatNumber = function(num, decimals = 0) {
+        return num.toFixed(decimals);
+    };
+
+    /**
+     * تنسيق المسافة
+     */
+    SpeedometerApp.formatDistance = function(km) {
+        if (km < 1) {
+            return (km * 1000).toFixed(0) + ' م';
+        }
+        return km.toFixed(2) + ' كم';
+    };
+
+    /**
+     * التحقق من أن الجهاز محمول
+     */
+    SpeedometerApp.isMobile = function() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+            .test(navigator.userAgent);
+    };
+
+    /**
+     * الحصول على معلومات الجهاز
+     */
+    SpeedometerApp.getDeviceInfo = function() {
+        const ua = navigator.userAgent;
+        let browser = 'Unknown';
+        let os = 'Unknown';
+
+        if (/Chrome\/[0-9]/.test(ua) && !/Edg|OPR/.test(ua)) browser = 'Chrome';
+        else if (/Safari\/[0-9]/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+        else if (/Firefox\/[0-9]/.test(ua)) browser = 'Firefox';
+        else if (/Edg\/[0-9]/.test(ua)) browser = 'Edge';
+
+        if (/Android/.test(ua)) os = 'Android';
+        else if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+        else if (/Windows/.test(ua)) os = 'Windows';
+        else if (/Mac/.test(ua)) os = 'macOS';
+        else if (/Linux/.test(ua)) os = 'Linux';
+
+        return { browser, os, isMobile: this.isMobile() };
+    };
+
+    /**
+     * تسجيل معلومات التشخيص
+     */
+    SpeedometerApp.logDiagnostics = function() {
+        const info = this.getDeviceInfo();
+        console.log('========== تشخيص التطبيق ==========');
+        console.log('الجهاز:', info.os);
+        console.log('المتصفح:', info.browser);
+        console.log('محمول:', info.isMobile);
+        console.log('يدعم GPS:', !!navigator.geolocation);
+        console.log('يدعم WakeLock:', 'wakeLock' in navigator);
+        console.log('يدعم Permissions:', !!navigator.permissions);
+        console.log('يدعم الاهتزاز:', !!navigator.vibrate);
+        console.log('كثافة البكسل:', window.devicePixelRatio);
+        console.log('حجم الشاشة:', `${screen.width}×${screen.height}`);
+        console.log('====================================');
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 14: تنظيف الموارد (Cleanup)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * تنظيف كل الموارد قبل الإغلاق
+     */
+    SpeedometerApp.cleanup = function() {
+        // إيقاف GPS
+        this.stopGPSTracking();
+
+        // تحرير WakeLock
+        this.releaseWakeLock();
+
+        // إيقاف حلقة التحديث
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+        }
+
+        console.log('[SpeedometerApp] تم تنظيف الموارد');
+    };
+
+
+    /* ================================================================
+       ================================================================
+       قسم 15: تشغيل التطبيق
+       (Application Bootstrap)
+       ================================================================
+       ================================================================ */
+
+    /**
+     * نقطة الدخول الرئيسية
+     * يتم تنفيذها عند اكتمال تحميل DOM
+     */
+    function bootstrap() {
+        try {
+            // تهيئة التطبيق
+            SpeedometerApp.init();
+
+            // تسجيل معلومات التشخيص
+            SpeedometerApp.logDiagnostics();
+
+            // كشف الأحداث العامة
+            console.log('%c🚀 GPS Speedometer Pro جاهز للاستخدام!',
+                       'color: #00f0ff; font-size: 16px; font-weight: bold;');
+            console.log('%cاضغط مسافة (Space) للبدء/الإيقاف | R لإعادة التعيين | S للإعدادات',
+                       'color: #00ff88; font-size: 12px;');
+
+        } catch (e) {
+            console.error('[SpeedometerApp] خطأ في التهيئة:', e);
+        }
+    }
+
+    // ================================================================
+    // انتظر تحميل DOM ثم شغّل التطبيق
+    // ================================================================
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootstrap);
+    } else {
+        // DOM جاهز بالفعل
+        bootstrap();
+    }
+
+    // ================================================================
+    // معالجة أحداث دورة حياة التطبيق
+    // ================================================================
+
+    // عند إخفاء الصفحة (تصغير المتصفح، تبديل التبويب)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            console.log('[SpeedometerApp] الصفحة في الخلفية');
+            // ملاحظة: GPS قد يستمر في العمل في الخلفية على بعض الأجهزة
+            // لكن هذا يعتمد على المتصفح ونظام التشغيل
+        }
+    });
+
+    // عند استعادة الاتصال بالإنترنت
+    window.addEventListener('online', () => {
+        console.log('[SpeedometerApp] عاد الاتصال بالإنترنت');
+        SpeedometerApp.showToast('عاد الاتصال بالإنترنت', 'success', 2000);
+    });
+
+    // عند فقدان الاتصال
+    window.addEventListener('offline', () => {
+        console.log('[SpeedometerApp] فقد الاتصال بالإنترنت');
+        SpeedometerApp.showToast('لا يوجد اتصال - GPS قد يعمل بشكل محدود', 'warning', 3000);
+    });
+
+    // عند تغيير حجم النافذة
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            // إعادة تهيئة الرسم البياني
+            if (SpeedometerApp.dom.speedGraphCanvas) {
+                SpeedometerApp.initSpeedGraph();
+            }
+        }, 250);
+    });
+
+    // ================================================================
+    // رسالة في الـ Console للمطورين
+    // ================================================================
+    console.log(
+        '%c\n' +
+        '╔══════════════════════════════════════════╗\n' +
+        '║     GPS SPEEDOMETER PRO v1.0.0          ║\n' +
+        '║     Ultra-Fast Real-Time Tracking       ║\n' +
+        '║     Update Interval: ~0.45s             ║\n' +
+        '╚══════════════════════════════════════════╝\n',
+        'color: #00f0ff; font-family: monospace; font-weight: bold;'
+    );
+
+    // ================================================================
+    // نهاية الكود
+    // ================================================================
+
+    </script>
+</body>
+</html>
